@@ -1,0 +1,21 @@
+{
+  "type": "panel",
+  "name": "3D Scatter Prak",
+  "id": "id-prak-3d-scatter",
+  "dataFormats": ["table"],
+  "info": {
+    "description": "3D Scatter Prak",
+    "author": {
+      "name": "Nam Le"
+    },
+    "keywords": [],
+    "screenshots": [],
+    "version": "1.0.0",
+    "updated": "2020-11-06"
+  },
+
+  "dependencies": {
+    "grafanaVersion": "6.3.x",
+    "plugins": []
+  }
+}
