@@ -95,7 +95,7 @@ export const processData = (series: Array<Frame>) => {
       duration[perDay]['01-10m'] * 5.5 +
       duration[perDay]['10-30m'] * 20 +
       duration[perDay]['30-60m'] * 45 +
-      duration[perDay]['60-90m'] * 45 +
+      duration[perDay]['60-90m'] * 75 +
       duration[perDay]['90-180m'] * 135;
 
     if (avg == 0) {
