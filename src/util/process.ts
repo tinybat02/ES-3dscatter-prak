@@ -6,18 +6,23 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 export const processData = (series: Array<Frame>) => {
-  const daily: { [key: string]: { z: number[]; y: number[]; x: number[] } } = {};
+  const data: { [key: string]: { z: number[]; y: number[]; x: number[]; text: string[] } } = {};
   const duration: {
     [key: string]: { '01-10m': number; '10-30m': number; '30-60m': number; '60-90m': number; '90-180m': number };
   } = {};
-
+  const dayToWeekday: { [key: string]: string } = {};
+  const dayOrder: string[] = [];
   // initiate
   series[0].fields[1].values.buffer.map(perDay => {
     const dayJs = dayjs(perDay).tz('Europe/Athens');
     if (dayJs.day() !== 0) {
       const dayformat = dayJs.format('YYYY-MM-DD');
-
-      daily[dayformat] = { z: [], y: [], x: [] };
+      const weekday = dayJs.format('dddd');
+      dayToWeekday[dayformat] = weekday;
+      dayOrder.push(dayformat);
+      if (!data[weekday]) {
+        data[weekday] = { z: [], y: [], x: [], text: [] };
+      }
       duration[dayformat] = { '01-10m': 0, '10-30m': 0, '30-60m': 0, '60-90m': 0, '90-180m': 0 };
     }
   });
@@ -25,22 +30,28 @@ export const processData = (series: Array<Frame>) => {
   series.map(category => {
     if (category.name == 'zAxis') {
       category.fields[1].values.buffer.map((perDay, i) => {
-        const day = dayjs(perDay)
+        const date = dayjs(perDay)
           .tz('Europe/Athens')
           .format('YYYY-MM-DD');
-        if (daily[day]) daily[day].z = [category.fields[0].values.buffer[i]];
+        const weekday = dayjs(perDay)
+          .tz('Europe/Athens')
+          .format('dddd');
+        if (data[weekday]) {
+          data[weekday].z.push(category.fields[0].values.buffer[i]);
+          data[weekday].text.push(date);
+        }
       });
     }
 
     if (category.name == 'yAxis') {
       category.fields[1].values.buffer.map((perDay, i) => {
-        const day = dayjs(perDay)
+        const weekday = dayjs(perDay)
           .tz('Europe/Athens')
-          .format('YYYY-MM-DD');
-        if (daily[day])
-          daily[day].y = [
-            category.fields[0].values.buffer[i] ? Number(category.fields[0].values.buffer[i].toFixed(2)) : 0,
-          ];
+          .format('dddd');
+        if (data[weekday])
+          data[weekday].y.push(
+            category.fields[0].values.buffer[i] ? Number(category.fields[0].values.buffer[i].toFixed(2)) : 0
+          );
       });
     }
 
@@ -90,7 +101,7 @@ export const processData = (series: Array<Frame>) => {
     }
   });
 
-  Object.keys(duration).map(perDay => {
+  dayOrder.map(perDay => {
     const avg =
       duration[perDay]['01-10m'] * 5.5 +
       duration[perDay]['10-30m'] * 20 +
@@ -98,17 +109,13 @@ export const processData = (series: Array<Frame>) => {
       duration[perDay]['60-90m'] * 75 +
       duration[perDay]['90-180m'] * 135;
 
-    if (avg == 0) {
-      delete daily[perDay];
-    } else {
-      daily[perDay].x = [Math.round(avg / 10) / 10];
-    }
+    data[dayToWeekday[perDay]].x.push(Math.round(avg / 10) / 10);
   });
 
-  return Object.keys(daily).map(day => ({
-    ...daily[day],
+  return Object.keys(data).map(day => ({
+    ...data[day],
     name: day,
-    hovertemplate: '%{z} Customers<br>' + '%{x} min<br>' + '%{y} % Return Rate',
+    hovertemplate: '%{z} Customers<br>' + '%{x} min<br>' + '%{y} % Return Rate<br>' + '%{text}',
     type: 'scatter3d',
     mode: 'markers',
     marker: { size: 5 },
